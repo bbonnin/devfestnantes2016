@@ -28,7 +28,6 @@ var StreamingContext = require('eclairjs/streaming/StreamingContext');
     
 var conf = new SparkConf()
     .setAppName('EclairJS/Nashorn: Spark Streaming')
-//    .setMaster('spark://inkdb-VirtualBox:7077')
     ;
 
 var ssc = new StreamingContext(conf, new Duration(2000));

@@ -23,7 +23,6 @@ var SQLContext = require('eclairjs/sql/SQLContext');
     
 var conf = new SparkConf()
     .setAppName("EclairJS/Nashorn: Spark SQL")
-//    .setMaster('spark://inkdb-VirtualBox:7077')
     ;
 var sc = new SparkContext(conf);
 var sqlContext = new SQLContext(sc);
