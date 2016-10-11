@@ -2,13 +2,16 @@
   "name": "devfestnantes2016",
   "version": "1.0.0",
   "description": "EclairJS examples for Devfest Nantes 2016 (cf. https://developer.ibm.com/node/2016/08/25/running-apache-spark-applications-with-node-js-on-ibm-bluemix/)",
-  "main": "no",
+  "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
-  "main": "index.js",
   "dependencies": {
+    "body-parser": "^1.15.2",
+    "bootstrap": "^3.3.7",
     "eclairjs": "^0.8.0",
-    "express": "^4.14.0"
+    "express": "^4.14.0",
+    "vue": "^2.0.1",
+    "vue-resource": "^1.0.3"
   }
 }

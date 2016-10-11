@@ -1,46 +1,34 @@
+// Express Init
+//
 var express = require('express');
-
+var bodyParser = require('body-parser');
 
 var app = express();
+app.use(bodyParser());
 app.use(express.static('public'));
+app.use(express.static('node_modules'));
 
-var server = app.listen(process.env.PORT || 8088, function () {
+var server = app.listen(process.env.PORT || 8088, () => {
 });
 
-var eclairjs = require('eclairjs');
-
-app.get('/do', function (req, res) {
-  var spark = new eclairjs();
-  var sc = new spark.SparkContext("local[*]", "Simple Spark Program");
-
-  var rdd = sc.parallelize([1.10, 2.2, 3.3, 4.4]);
-
-  var rdd2 = rdd.map(function(num) {
-    return num * 2;
-  });
-
-  rdd2.collect().then(function(results) {
-    sc.stop();
-    res.json({result: results});
-  }).catch(function(err) {
-    sc.stop();
-    res.json({error: err});
-  });
-});
-
-
+// EclairJS Init
+//
 var eclairjs = require('eclairjs');
 var spark = new eclairjs();
 var Tuple2 = spark.Tuple2;
+var sc = new spark.SparkContext('spark://127.0.1.1:7077', 'EclairJS/NodeJS');
 
+// Routes definition
+//
 
-function run(sparkContext) {
+var nbCounts = 0;
 
-    var file = ((typeof args !== "undefined") && (args.length > 1)) ? args[1] : "/home/inkdb/conferences/devfestnantes/data/dream.txt";
+app.get('/wordcount', (req, res) => {
+//    var sc = new spark.SparkContext('local[*]', 'EclairJS/NodeJS: word count ' + (++nbCounts));
 
+    var filename = process.env.HOME + '/conferences/devfestnantes2016/data/dream.txt';
 
-    var lines = sparkContext.textFile(file).cache();
-
+    var lines = sc.textFile(filename).cache();
 
     var words = lines
         .flatMap(function (line) {
@@ -49,7 +37,7 @@ function run(sparkContext) {
         .filter(function (word) {
             return word.trim().length > 0;
         });
-        
+
     var counts = words
         .mapToPair(function (word, Tuple2) {
             return new Tuple2(word, 1);
@@ -58,26 +46,39 @@ function run(sparkContext) {
             return a + b;
         });
 
+    var sortedCounts = counts
+        .mapToPair(function (tuple, Tuple2) {
+            return new Tuple2(tuple._2() + 0.0, tuple._1());
+        }, [Tuple2])
+        .sortByKey(false);
 
-    return counts.take(10);
-}
+    sortedCounts.take(10)
+    .then((results) => {
+//        sc.stop();
+        res.json({result: results});
+    })
+    .catch((err) => {
+//        sc.stop();
+        res.status(500).send(err);
+    });
+});
 
+app.post('/sql', (req, res) => {
+    var sqlContext = new spark.sql.SQLContext(sc);
+    var df = sqlContext.read().json(process.env.HOME + '/conferences/devfestnantes2016/data/people.json');
 
-
-var conf = new spark.SparkConf()
-    .setAppName("JavaScript word count")
-    .setMaster("spark://inkdb-VirtualBox:7077")
-    ;
-var sc = new spark.SparkContext("spark://inkdb-VirtualBox:7077", "NodeJS word count");
-var result = run(sc);
-result.then(function(results) {
-    sc.stop();
-    console.log("First 10 words = " + results);
-//    res.json({result: results});
-  }).catch(function(err) {
-    sc.stop();
-    console.log(err);
-//    res.json({error: err});
-  });
+    df.registerTempTable('people')
+    .then(() => {
+        var sqlDF = sqlContext.sql(req.body.query);
+   
+        sqlDF.collect().then(function(results) {
+//            sc.stop();
+            res.json({result: results});
+        }).catch(function(err) {
+//            sc.stop();
+            res.status(500).send(err);
+        })
+    })
+});
 
 
