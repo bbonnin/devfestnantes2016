@@ -1,5 +1,9 @@
 # devfestnantes2016
 
+## EclairJS
+
+This tests have been run with EclairJS 0.7 (Spark 1.6 and Scala 2.10)
+
 ## Jupyter
 
 pip install jupyter
