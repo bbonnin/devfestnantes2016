@@ -8,45 +8,64 @@
 </head>
 
 <body>
+  <div class="container">
+  
   <h2>EclairJS <small>examples</small></h2>
+  
+    <div id="eclairjs">
+      <div v-show="error && !running" class="alert alert-danger">{{ error }}</div>
 
-  <div id="eclairjs">
-    <div v-show="error && !running" class="alert alert-danger">{{ error }}</div>
-
-    <div v-show="running" class="alert alert-warning">{{ running }} is running...</div>
-
-    <div class="panel panel-info">
-      <div class="panel-heading">
-        <h3 class="panel-title">SQL</h3>
+      <div v-show="running" class="alert alert-warning">{{ running }} is running...</div>
+      
+      <div class="panel panel-info">
+        <div class="panel-heading">
+          <h3 class="panel-title">Streaming (Twitter)</h3>
+        </div>
+        <div class="panel-body">
+          <button class="btn btn-primary" :disabled="running" @click="runStreaming">Run</button>
+          <button class="btn btn-danger" :disabled="!refreshId" @click="stopStreaming">Stop</button>
+          <p>
+            <table v-show="hashtags.length > 0" class="table">
+              <tr><th>Popular tags</th></tr>
+              <tr v-for="tag in hashtags"><td>{{ tag }}</td></tr>
+            </table>
+          </p>
+        </div>
       </div>
-      <div class="panel-body">
-        <form class="form-inline">
-          <button class="btn btn-primary" :disabled="running" @click="runSQL">Run</button>
-          <input type="text" class="form-control" v-model="query" style="min-width: 50%">
-        </form>
-        <p>
-          <table v-if="queryRes && queryRes.length > 0" class="table">
-            <tr><th v-for="(val, key) in queryRes[0]">{{ key }}</th></tr>
-            <tr v-for="row in queryRes">
-              <td v-for="(val, key) in queryRes[0]">{{ row[key] }}</td>
-            </tr>
-          </table>
-        </p>
-      </div>
-    </div>
 
-    <div class="panel panel-info">
-      <div class="panel-heading">
-        <h3 class="panel-title">Word count</h3>
+      <div class="panel panel-info">
+        <div class="panel-heading">
+          <h3 class="panel-title">SQL</h3>
+        </div>
+        <div class="panel-body">
+          <form class="form-inline">
+            <button class="btn btn-primary" :disabled="running" @click="runSQL">Run</button>
+            <input type="text" class="form-control" v-model="query" style="min-width: 50%">
+          </form>
+          <p>
+            <table v-if="queryRes && queryRes.length > 0" class="table">
+              <tr><th v-for="(val, key) in queryRes[0]">{{ key }}</th></tr>
+              <tr v-for="row in queryRes">
+                <td v-for="(val, key) in queryRes[0]">{{ row[key] }}</td>
+              </tr>
+            </table>
+          </p>
+        </div>
       </div>
-      <div class="panel-body">
-        <button class="btn btn-primary" :disabled="running" @click="runWordCount">Run</button>
-        <p>
-          <table v-show="wordcounts" class="table">
-            <tr><th>Word</th><th>Count</th></tr>
-            <tr v-for="count in wordcounts"><td>{{ count['1'] }}</td><td>{{ count['0'] }}</td></tr>
-          </table>
-        </p>
+
+      <div class="panel panel-info">
+        <div class="panel-heading">
+          <h3 class="panel-title">Word count</h3>
+        </div>
+        <div class="panel-body">
+          <button class="btn btn-primary" :disabled="running" @click="runWordCount">Run</button>
+          <p>
+            <table v-show="wordcounts" class="table">
+              <tr><th>Word</th><th>Count</th></tr>
+              <tr v-for="count in wordcounts"><td>{{ count['1'] }}</td><td>{{ count['0'] }}</td></tr>
+            </table>
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -62,7 +81,9 @@
       error: false,
       wordcounts: null,
       query: 'SELECT * FROM people',
-      queryRes: null
+      queryRes: null,
+      hashtags: [],
+      refreshId: null
     },
 
     methods: {
@@ -72,18 +93,41 @@
         this.wordcounts = null
         this.queryRes = null
       },
+      
+      errHandler: function (err) {
+        this.error = err.body
+      },
+      
+      finallyHandler: function () {
+        this.running = null
+      },
+      
+      stopStreaming: function () {
+        if (this.refreshId) {
+          clearInterval(this.refreshId)
+          this.refreshId = null
+          this.running = null
+        }
+      },
+      
+      runStreaming: function () {
+        this.reinit('STREAMING');
+        this.refreshId = setInterval(() => {
+            this.$http.get('/streaming')
+            .then(response => {
+              this.hashtags = response.data.result
+            }, this.errHandler)
+            .finally(() => {})
+        }, 2000);
+      },
 
       runSQL: function () {
         this.reinit('SQL')
         this.$http.post('/sql', { query: this.query })
         .then(response => {
           this.queryRes = response.data.result
-        }, err => {
-          this.error = err.body
-        })
-        .finally(() => {
-          this.running = null
-        })
+        }, this.errHandler)
+        .finally(this.finallyHandler)
       },
 
       runWordCount: function () {
@@ -91,12 +135,8 @@
         this.$http.get('/wordcount')
         .then(response => {
           this.wordcounts = response.data.result
-        }, err => {
-          this.error = err.body
-        })
-        .finally(() => {
-          this.running = null
-        })
+        }, this.errHandler)
+        .finally(this.finallyHandler)
       }
     }
   })

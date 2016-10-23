@@ -17,11 +17,36 @@ var eclairjs = require('eclairjs');
 var spark = new eclairjs();
 var Tuple2 = spark.Tuple2;
 var sc = new spark.SparkContext('spark://127.0.1.1:7077', 'EclairJS/NodeJS');
+var ssc = new spark.streaming.StreamingContext(sc, new spark.streaming.Duration(2000));
+
+var stream = ssc.socketTextStream('localhost', 9999);
+
+var hashtags = [];
+
+var hashtagDStream = stream
+    .flatMap(function(tags) {
+        return tags.split(/\s+/);
+    });
+    
+hashtagDStream
+    .foreachRDD(function(rdd) {
+        return rdd.collect();
+    }, null, function(res) {
+        hashtags = res;
+    })
+    .then(function () {
+        ssc.start();
+    });
+
 
 // Routes definition
 //
 
 var nbCounts = 0;
+
+app.get('/streaming', (req, res) => {
+    res.json({result: hashtags});
+});
 
 app.get('/wordcount', (req, res) => {
 //    var sc = new spark.SparkContext('local[*]', 'EclairJS/NodeJS: word count ' + (++nbCounts));
@@ -80,5 +105,25 @@ app.post('/sql', (req, res) => {
         })
     })
 });
+
+
+// Process end
+//
+
+function exit() {
+    process.exit(0);
+}
+
+function stop(e) {
+    if (e) {
+        console.log('Error:', e);
+    }
+
+    if (sc) {
+        sc.stop().then(exit).catch(exit);
+    }
+}
+process.on('SIGTERM', stop);
+process.on('SIGINT', stop);
 
 

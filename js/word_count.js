@@ -4,7 +4,7 @@ function countWords(sparkContext) {
 
     var filename = java.lang.System.getenv('HOME') + '/conferences/devfestnantes2016/data/dream.txt';
 
-    var lines = sparkContext.textFile(filename).cache();
+    var lines = sparkContext.textFile(filename);
 
     var words = lines
         .flatMap(function (line) {
