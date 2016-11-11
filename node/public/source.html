@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Devfest Nantes 2016 : EclairJS</title>
+  <link rel="stylesheet" href="bootstrap/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="highlight.js/styles/zenburn.css">
+  <script src="highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+</head>
+
+<body>
+  <div class="container">
+    <a href="sql"></a>
+    <pre>
+      <code class="javascript">
+// EclairJS Init
+//
+var eclairjs = require('eclairjs');
+var spark = new eclairjs();
+var Tuple2 = spark.Tuple2;
+var sc = new spark.SparkContext('spark://127.0.1.1:7077', 'EclairJS/NodeJS');
+
+app.post('/sql', (req, res) => {
+    var sqlContext = new spark.sql.SQLContext(sc);
+    var df = sqlContext.read().json(process.env.HOME + '/conferences/devfestnantes2016/data/people.json');
+
+    df.registerTempTable('people')
+    .then(() => {
+        var sqlDF = sqlContext.sql(req.body.query);
+   
+        sqlDF.collect().then(function(results) {
+            res.json({result: results});
+        }).catch(function(err) {
+            res.status(500).send(err);
+        })
+    })
+});
+      </code>
+    </pre>
+  </div>
+</body>
+</html>

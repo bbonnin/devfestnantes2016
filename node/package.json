@@ -11,6 +11,7 @@
     "bootstrap": "^3.3.7",
     "eclairjs": "0.7.0",
     "express": "^4.14.0",
+    "highlight.js": "^9.8.0",
     "vue": "^2.0.1",
     "vue-resource": "^1.0.3"
   }

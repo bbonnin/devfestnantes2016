@@ -10,32 +10,16 @@
 <body>
   <div class="container">
   
-  <h2>EclairJS <small>examples</small></h2>
+  <h2>EclairJS <small>examples (<a href="http://localhost:8077" target="_blank">Spark UI</a>)</small></h2>
   
     <div id="eclairjs">
       <div v-show="error && !running" class="alert alert-danger">{{ error }}</div>
 
       <div v-show="running" class="alert alert-warning">{{ running }} is running...</div>
-      
-      <div class="panel panel-info">
-        <div class="panel-heading">
-          <h3 class="panel-title">Streaming (Twitter)</h3>
-        </div>
-        <div class="panel-body">
-          <button class="btn btn-primary" :disabled="running" @click="runStreaming">Run</button>
-          <button class="btn btn-danger" :disabled="!refreshId" @click="stopStreaming">Stop</button>
-          <p>
-            <table v-show="hashtags.length > 0" class="table">
-              <tr><th>Popular tags</th></tr>
-              <tr v-for="tag in hashtags"><td>{{ tag }}</td></tr>
-            </table>
-          </p>
-        </div>
-      </div>
 
       <div class="panel panel-info">
         <div class="panel-heading">
-          <h3 class="panel-title">SQL</h3>
+          <h3 class="panel-title">SQL (<a href="source.html" target="_blank">source</a>)</h3>
         </div>
         <div class="panel-body">
           <form class="form-inline">
@@ -48,6 +32,22 @@
               <tr v-for="row in queryRes">
                 <td v-for="(val, key) in queryRes[0]">{{ row[key] }}</td>
               </tr>
+            </table>
+          </p>
+        </div>
+      </div>
+      
+      <div class="panel panel-info">
+        <div class="panel-heading">
+          <h3 class="panel-title">Streaming (socket)</h3>
+        </div>
+        <div class="panel-body">
+          <button class="btn btn-primary" :disabled="running" @click="runStreaming">Run</button>
+          <button class="btn btn-danger" :disabled="!refreshId" @click="stopStreaming">Stop</button>
+          <p>
+            <table v-show="hashtags.length > 0" class="table">
+              <tr><th>Popular tags</th></tr>
+              <tr v-for="tag in hashtags"><td>{{ tag }}</td></tr>
             </table>
           </p>
         </div>
@@ -65,6 +65,15 @@
               <tr v-for="count in wordcounts"><td>{{ count['1'] }}</td><td>{{ count['0'] }}</td></tr>
             </table>
           </p>
+        </div>
+      </div>
+
+      <div class="panel panel-info">
+        <div class="panel-heading">
+          <h3 class="panel-title">Bad code</h3>
+        </div>
+        <div class="panel-body">
+          <button class="btn btn-primary" :disabled="running" @click="runBadCode">Run</button>
         </div>
       </div>
     </div>
@@ -135,6 +144,14 @@
         this.$http.get('/wordcount')
         .then(response => {
           this.wordcounts = response.data.result
+        }, this.errHandler)
+        .finally(this.finallyHandler)
+      },
+
+      runBadCode: function () {
+        this.reinit('BAD CODE');
+        this.$http.get('/bad')
+        .then(response => {
         }, this.errHandler)
         .finally(this.finallyHandler)
       }

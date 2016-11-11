@@ -48,6 +48,26 @@ app.get('/streaming', (req, res) => {
     res.json({result: hashtags});
 });
 
+app.get('/bad', (req, res) => {
+    var filename = process.env.HOME + '/conferences/devfestnantes2016/data/dream.txt';
+
+    var lines = sc.textFile(filename).cache();
+
+    var words = lines
+        .flatMap(function (line) {
+            nbCounts += 1;
+            console.log("flatmap");
+            return line.split(" ");
+        })
+        .collect()
+        .then((results) => {
+            res.json({result: results});
+        })
+        .catch(err => {
+            res.status(500).send(err);
+        });
+});
+
 app.get('/wordcount', (req, res) => {
 //    var sc = new spark.SparkContext('local[*]', 'EclairJS/NodeJS: word count ' + (++nbCounts));
 
